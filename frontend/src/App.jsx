@@ -4,7 +4,7 @@ import Sidebar from './components/Sidebar';
 import SetupPhase from './components/SetupPhase';
 import LaneBanPhase from './components/LaneBanPhase';
 import ChoicePhase from './components/ChoicePhase';
-import { initializeSounds, playClickSound, playBanSound } from './sounds';
+import { initializeSounds, playLockSound, playBanSound } from './sounds';
 
 function App() {
     const [state, setState] = useState(null);
@@ -31,17 +31,23 @@ function App() {
     if (!state) return <div className="h-screen flex items-center justify-center text-primary">Carregando Arena...</div>;
 
     const handleSetup = (data) => {
-        playClickSound();
+        playLockSound(); // Major transition: Iniciar Confronto
         api.post(`/setup`, data).then(res => setState(res.data));
     };
 
     const handleBan = (lane) => {
         playBanSound();
-        api.post(`/ban-lane`, { lane }).then(res => setState(res.data));
+        api.post(`/ban-lane`, { lane }).then(res => {
+            setState(res.data);
+            // Play lock sound after 4th ban (lane selected)
+            if (res.data.selected_lane) {
+                playLockSound();
+            }
+        });
     };
 
     const handleDraw = () => {
-        playClickSound();
+        playLockSound(); // Major transition: Sortear Campeões
         api.post(`/draw`).then(res => setState(res.data));
     };
 

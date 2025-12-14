@@ -1,7 +1,7 @@
 import React from 'react';
 import api from '../api';
 import ChampionCard from './ChampionCard';
-import { playClickSound, playChampionVoice, playLockSound } from '../sounds';
+import { playChampionVoice, playLockSound } from '../sounds';
 
 const ChoicePhase = ({ state, onStateUpdate }) => {
     const {
@@ -32,14 +32,14 @@ const ChoicePhase = ({ state, onStateUpdate }) => {
 
     // Phase 1: Lower Elo chooses A or B
     const handleRule6Choice = async (choice) => {
-        playClickSound();
+        playLockSound(); // Major transition
         const res = await api.post(`/rule6-choice?choice=${choice}`);
         onStateUpdate(res.data);
     };
 
     // Phase 2: Pick order chooser decides who picks first
     const handleSetPickOrder = async (firstPicker) => {
-        playClickSound();
+        playLockSound(); // Major transition
         const res = await api.post(`/set-pick-order?first_picker=${firstPicker}`);
         onStateUpdate(res.data);
     };
