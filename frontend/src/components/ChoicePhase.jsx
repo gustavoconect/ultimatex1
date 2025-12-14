@@ -1,6 +1,7 @@
 import React from 'react';
 import api from '../api';
 import ChampionCard from './ChampionCard';
+import { playClickSound, playChampionVoice, playLockSound } from '../sounds';
 
 const ChoicePhase = ({ state, onStateUpdate }) => {
     const {
@@ -31,18 +32,21 @@ const ChoicePhase = ({ state, onStateUpdate }) => {
 
     // Phase 1: Lower Elo chooses A or B
     const handleRule6Choice = async (choice) => {
+        playClickSound();
         const res = await api.post(`/rule6-choice?choice=${choice}`);
         onStateUpdate(res.data);
     };
 
     // Phase 2: Pick order chooser decides who picks first
     const handleSetPickOrder = async (firstPicker) => {
+        playClickSound();
         const res = await api.post(`/set-pick-order?first_picker=${firstPicker}`);
         onStateUpdate(res.data);
     };
 
     // Phase 3: Pick champions (Game 1 = first pick, Game 2 = second pick)
     const handlePick = async (game, champ) => {
+        playChampionVoice(champ); // Play champion voice!
         const imgUrl = `https://ddragon.leagueoflegends.com/cdn/${version}/img/champion/${champ}.png`;
         const playerName = game === "Game 1" ? firstPickerName : secondPickerName;
         const res = await api.post('/pick', { game, champion: champ, image: imgUrl, player: playerName });
@@ -51,6 +55,7 @@ const ChoicePhase = ({ state, onStateUpdate }) => {
 
     // Phase 4: Side chooser picks their side
     const handleSetSide = async (side) => {
+        playLockSound();
         const res = await api.post(`/set-map-side?side=${side}`);
         onStateUpdate(res.data);
     };

@@ -4,22 +4,25 @@ import Sidebar from './components/Sidebar';
 import SetupPhase from './components/SetupPhase';
 import LaneBanPhase from './components/LaneBanPhase';
 import ChoicePhase from './components/ChoicePhase';
+import { initializeSounds, playClickSound, playBanSound } from './sounds';
 
 function App() {
     const [state, setState] = useState(null);
 
-    // Poll state (or refetch on actions)
-    const fetchState = () => {
-        api.get(`/state`)
-            .then(res => {
-                setState(res.data);
-            })
-            .catch(err => {
-                console.error("Error fetching state:", err);
-            });
-    };
-
+    // Initialize sounds and poll state
     useEffect(() => {
+        initializeSounds(); // Preload sounds on app start
+
+        const fetchState = () => {
+            api.get(`/state`)
+                .then(res => {
+                    setState(res.data);
+                })
+                .catch(err => {
+                    console.error("Error fetching state:", err);
+                });
+        };
+
         fetchState();
         const interval = setInterval(fetchState, 2000);
         return () => clearInterval(interval);
@@ -28,14 +31,17 @@ function App() {
     if (!state) return <div className="h-screen flex items-center justify-center text-primary">Carregando Arena...</div>;
 
     const handleSetup = (data) => {
+        playClickSound();
         api.post(`/setup`, data).then(res => setState(res.data));
     };
 
     const handleBan = (lane) => {
+        playBanSound();
         api.post(`/ban-lane`, { lane }).then(res => setState(res.data));
     };
 
     const handleDraw = () => {
+        playClickSound();
         api.post(`/draw`).then(res => setState(res.data));
     };
 
