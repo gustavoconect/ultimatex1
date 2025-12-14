@@ -1,52 +1,78 @@
 // Sound utility for X1 Manager
 // Uses lazy loading to prevent lag
 
-// UI Sound Effects - using reliable LoL champion select sounds
-const UI_SOUNDS = {
-    // Using champion select sounds that are known to exist
-    hover: "https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-champ-select/global/default/sounds/sfx-cs-timer-tick.ogg",
-    click: "https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-champ-select/global/default/sounds/sfx-cs-confirm-choice.ogg",
-    lock: "https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-champ-select/global/default/sounds/sfx-cs-lockin-button-click.ogg",
-    ban: "https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-champ-select/global/default/sounds/sfx-cs-draft-ban.ogg",
-    reveal: "https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-champ-select/global/default/sounds/sfx-cs-draft-pick.ogg",
-    phase: "https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-champ-select/global/default/sounds/sfx-cs-draft-turn-notification.ogg"
-};
+// Lock sound URL (this one works!)
+const LOCK_SOUND_URL = "https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-champ-select/global/default/sounds/sfx-cs-lockin-button-click.ogg";
 
 // Champion ID mapping (name -> id) for voice lookup
 let championIdMap = {};
 
-// Audio cache to prevent reloading
+// Audio cache
 const audioCache = {};
-let soundsLoaded = false;
+let audioContext = null;
 
-// Preload common UI sounds
-export const preloadUISounds = () => {
-    if (soundsLoaded) return;
-
-    Object.entries(UI_SOUNDS).forEach(([key, url]) => {
-        const audio = new Audio();
-        audio.preload = "auto";
-        audio.src = url;
-        audio.volume = 0.4;
-        audio.load(); // Force load
-        audioCache[key] = audio;
-    });
-
-    soundsLoaded = true;
-    console.log("Sounds preloaded");
+// Get or create audio context
+const getAudioContext = () => {
+    if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    return audioContext;
 };
 
-// Play a cached UI sound
-export const playUISound = (soundName) => {
+// Generate a simple beep sound using Web Audio API
+const playBeep = (frequency = 800, duration = 0.1, volume = 0.3) => {
     try {
-        if (audioCache[soundName]) {
-            // Clone to allow overlapping sounds
-            const sound = audioCache[soundName].cloneNode();
-            sound.volume = 0.3;
-            sound.play().catch(() => { }); // Ignore autoplay errors
+        const ctx = getAudioContext();
+        const oscillator = ctx.createOscillator();
+        const gainNode = ctx.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(ctx.destination);
+
+        oscillator.frequency.value = frequency;
+        oscillator.type = 'sine';
+
+        gainNode.gain.setValueAtTime(volume, ctx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+
+        oscillator.start(ctx.currentTime);
+        oscillator.stop(ctx.currentTime + duration);
+    } catch (e) {
+        console.log("Audio error:", e);
+    }
+};
+
+// Preload lock sound
+export const preloadUISounds = () => {
+    const audio = new Audio();
+    audio.preload = "auto";
+    audio.src = LOCK_SOUND_URL;
+    audio.volume = 0.5;
+    audio.load();
+    audioCache.lock = audio;
+    console.log("Lock sound preloaded");
+};
+
+// Play click sound (generated beep)
+export const playClickSound = () => {
+    playBeep(1000, 0.08, 0.2); // High-pitched short click
+};
+
+// Play ban sound (generated beep)
+export const playBanSound = () => {
+    playBeep(300, 0.2, 0.3); // Low-pitched ban sound
+};
+
+// Play lock-in sound (from Community Dragon - works!)
+export const playLockSound = () => {
+    try {
+        if (audioCache.lock) {
+            const sound = audioCache.lock.cloneNode();
+            sound.volume = 0.5;
+            sound.play().catch(() => { });
         }
     } catch (e) {
-        console.log("Sound error:", e);
+        console.log("Lock sound error:", e);
     }
 };
 
@@ -55,22 +81,7 @@ let hoverDebounce = null;
 export const playHoverSound = () => {
     if (hoverDebounce) return;
     hoverDebounce = setTimeout(() => { hoverDebounce = null; }, 50);
-    playUISound("hover");
-};
-
-// Play click sound
-export const playClickSound = () => {
-    playUISound("click");
-};
-
-// Play lane ban sound
-export const playBanSound = () => {
-    playUISound("ban");
-};
-
-// Play lock-in sound
-export const playLockSound = () => {
-    playUISound("lock");
+    playBeep(1200, 0.03, 0.1); // Subtle beep for hover
 };
 
 // Fetch champion data to get IDs
