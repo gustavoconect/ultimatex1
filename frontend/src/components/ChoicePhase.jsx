@@ -65,13 +65,14 @@ const ChoicePhase = ({ state, onStateUpdate }) => {
 
                 <div className="flex gap-6">
                     {drawn_champions.map(champ => (
-                        <ChampionCard
-                            key={champ}
-                            name={champ}
-                            image={`https://ddragon.leagueoflegends.com/cdn/${version}/img/champion/${champ}.png`}
-                            isSelected={false}
-                            isBanned={false}
-                        />
+                        <div key={champ} className="w-40">
+                            <ChampionCard
+                                name={champ}
+                                image={`https://ddragon.leagueoflegends.com/cdn/${version}/img/champion/${champ}.png`}
+                                isSelected={false}
+                                isBanned={false}
+                            />
+                        </div>
                     ))}
                 </div>
 
@@ -107,13 +108,14 @@ const ChoicePhase = ({ state, onStateUpdate }) => {
 
                 <div className="flex gap-6">
                     {drawn_champions.map(champ => (
-                        <ChampionCard
-                            key={champ}
-                            name={champ}
-                            image={`https://ddragon.leagueoflegends.com/cdn/${version}/img/champion/${champ}.png`}
-                            isSelected={false}
-                            isBanned={false}
-                        />
+                        <div key={champ} className="w-40">
+                            <ChampionCard
+                                name={champ}
+                                image={`https://ddragon.leagueoflegends.com/cdn/${version}/img/champion/${champ}.png`}
+                                isSelected={false}
+                                isBanned={false}
+                            />
+                        </div>
                     ))}
                 </div>
 
@@ -163,7 +165,7 @@ const ChoicePhase = ({ state, onStateUpdate }) => {
                             (hasPick2 && picks["Game 2"].champion === champ);
 
                         return (
-                            <div key={champ} className="flex flex-col items-center gap-3">
+                            <div key={champ} className="w-40 flex flex-col items-center gap-3">
                                 <ChampionCard
                                     name={champ}
                                     image={imgUrl}
