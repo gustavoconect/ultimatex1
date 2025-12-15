@@ -1,0 +1,357 @@
+import React, { useState, useEffect } from 'react';
+import api from '../api';
+import ChampionCard from './ChampionCard';
+import { playLockSound, playBanSound, playChampionVoice } from '../sounds';
+
+const KnockoutPhase = ({ state, onStateUpdate }) => {
+    const {
+        series_format,
+        announced_champions,
+        knockout_bans,
+        announce_turn_player,
+        player_a,
+        player_b,
+        picks,
+        series_score
+    } = state;
+
+    const [allChampions, setAllChampions] = useState([]);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [selectedChamp, setSelectedChamp] = useState(null);
+    const [banTurn, setBanTurn] = useState("A"); // Local state for ban turn sequence
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        api.get('/champions-all').then(res => {
+            // Flatten and Deduplicate
+            const flat = Object.values(res.data).flat();
+            const unique = Array.from(new Map(flat.map(item => [item.name, item])).values());
+            unique.sort((a, b) => a.name.localeCompare(b.name));
+            setAllChampions(unique);
+        });
+    }, []);
+
+    const targetAnnouncements = series_format === "MD3" ? 4 : 6; // 2 each or 3 each
+    const currentAnnouncements = announced_champions["A"].length + announced_champions["B"].length;
+
+    // Determine Phase
+    const isAnnouncementPhase = currentAnnouncements < targetAnnouncements;
+    const isBanPhase = !isAnnouncementPhase && knockout_bans.length < 2;
+    const isSeriesPhase = !isAnnouncementPhase && !isBanPhase;
+
+    // --- Announcement Logic ---
+    const handleAnnounce = async () => {
+        if (!selectedChamp) return;
+        setLoading(true);
+        try {
+            const res = await api.post('/announce-champion', {
+                champion: selectedChamp.name,
+                image: selectedChamp.image
+            });
+            playChampionVoice(selectedChamp.name);
+            onStateUpdate(res.data);
+            setSelectedChamp(null);
+            setSearchTerm("");
+        } catch (err) {
+            alert(err.response?.data?.detail || "Erro ao anunciar campeão");
+        }
+        setLoading(false);
+    };
+
+    // --- Ban Logic ---
+    const handleBan = async (champName) => {
+        playBanSound();
+        const res = await api.post('/knockout-ban', { champion: champName });
+        onStateUpdate(res.data);
+        setBanTurn(prev => prev === "A" ? "B" : "A"); // Toggle local ban turn visual
+    };
+
+    const handleFinalize = async () => {
+        if (!confirm("Confirmar finalização e salvar histórico?")) return;
+        try {
+            await api.post('/finish-knockout');
+            window.location.reload();
+        } catch (err) {
+            alert("Erro ao finalizar");
+        }
+    };
+
+    // --- Series Logic ---
+    // Handled by ChoicePhase logic mostly? Or custom here?
+    // We need a specific UI for Series Picks.
+    const [seriesPick, setSeriesPick] = useState({ game: "Game 1", champ: null });
+
+    const currentPlayerName = announce_turn_player === "A" ? player_a : player_b;
+
+    if (isAnnouncementPhase) {
+        const filteredChamps = allChampions.filter(c =>
+            c.name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+
+        return (
+            <div className="p-8 animate-fade-in flex flex-col items-center gap-8 h-full">
+                <h2 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-red-500">
+                    📢 Anúncio de Campeões
+                </h2>
+
+                <div className="w-full max-w-4xl grid grid-cols-2 gap-8 mb-8">
+                    {/* Player A Pool */}
+                    <div className="bg-blue-900/20 p-4 rounded-xl border border-blue-500/30 min-h-[200px]">
+                        <h3 className="text-blue-400 font-bold mb-4 flex justify-between">
+                            <span>{player_a}</span>
+                            <span>{announced_champions["A"].length} / {targetAnnouncements / 2}</span>
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                            {announced_champions["A"].map((c, i) => (
+                                <img key={i} src={c.image} className="w-12 h-12 rounded border border-blue-400" title={c.name} />
+                            ))}
+                        </div>
+                    </div>
+                    {/* Player B Pool */}
+                    <div className="bg-red-900/20 p-4 rounded-xl border border-red-500/30 min-h-[200px]">
+                        <h3 className="text-red-400 font-bold mb-4 flex justify-between">
+                            <span>{player_b}</span>
+                            <span>{announced_champions["B"].length} / {targetAnnouncements / 2}</span>
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                            {announced_champions["B"].map((c, i) => (
+                                <img key={i} src={c.image} className="w-12 h-12 rounded border border-red-400" title={c.name} />
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-cardBg p-8 rounded-2xl border border-white/10 shadow-2xl w-full max-w-2xl text-center">
+                    <p className="text-gray-400 mb-2">Vez de Anunciar</p>
+                    <div className="text-3xl font-bold text-primary mb-6 animate-pulse-gold">{currentPlayerName}</div>
+
+                    <div className="relative mb-6">
+                        <input
+                            type="text"
+                            placeholder="Buscar campeão..."
+                            value={searchTerm}
+                            onChange={e => setSearchTerm(e.target.value)}
+                            className="w-full bg-bgDark border border-white/20 rounded-lg p-4 text-white focus:border-primary outline-none text-lg"
+                        />
+                        {searchTerm && (
+                            <div className="absolute top-full left-0 right-0 bg-bgDark border border-white/20 max-h-60 overflow-y-auto z-50 rounded-b-lg shadow-xl">
+                                {filteredChamps.map(c => (
+                                    <div
+                                        key={c.name}
+                                        onClick={() => { setSelectedChamp(c); setSearchTerm(c.name); }}
+                                        className="p-3 hover:bg-white/10 cursor-pointer flex items-center gap-3 border-b border-white/5"
+                                    >
+                                        <img src={c.image} className="w-8 h-8 rounded-full" />
+                                        <span>{c.name}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {selectedChamp && (
+                        <div className="flex flex-col items-center gap-4 animate-fade-in">
+                            <ChampionCard name={selectedChamp.name} image={selectedChamp.image} isSelected={true} />
+                            <button
+                                onClick={handleAnnounce}
+                                disabled={loading}
+                                className="bg-primary text-black px-8 py-3 rounded-xl font-bold hover:scale-105 transition-transform"
+                            >
+                                Confirmar Anúncio
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
+    if (isBanPhase) {
+        // Flat list of announced champs, excluding already banned
+        const allAnnounced = [...announced_champions["A"], ...announced_champions["B"]];
+        const remaining = allAnnounced.filter(c => !knockout_bans.includes(c.name));
+
+        // Determine ban turn: A bans first, then B? Or user manual?
+        // Logic: Setup doesn't define ban turn. Let's assume Announce First logic or alternating.
+        // Or simpler: Just allow either to click. The UI shows "Banimento 1/2".
+        const banCount = knockout_bans.length;
+        // Since we don't have explicit ban turn state in backend, we simulate or assume manual control is okay.
+        // Or use `announce_turn_player`? But backend switches it after announce.
+        // We can just display "Banimento {banCount + 1}"
+
+        return (
+            <div className="p-8 animate-fade-in flex flex-col items-center gap-8">
+                <h2 className="text-4xl font-bold text-red-500 flex items-center gap-4">
+                    🚫 Fase de Banimentos ({banCount + 1}/2)
+                </h2>
+                <p className="text-gray-400">Clique em um campeão para banir da série</p>
+
+                <div className="flex flex-wrap justify-center gap-6 max-w-5xl">
+                    {remaining.map(c => (
+                        <div key={c.name} onClick={() => handleBan(c.name)} className="cursor-pointer hover:scale-105 transition-transform relative group">
+                            <ChampionCard name={c.name} image={c.image} />
+                            <div className="absolute inset-0 bg-red-500/0 group-hover:bg-red-500/40 transition-colors rounded-xl flex items-center justify-center">
+                                <span className="opacity-0 group-hover:opacity-100 font-bold text-white text-xl">BANIR</span>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    }
+
+    // Series Phase (Picks)
+    const allAnnounced = [...announced_champions["A"], ...announced_champions["B"]];
+    const availablePool = allAnnounced.filter(c => !knockout_bans.includes(c.name));
+
+    const gamesNeeded = series_format === "MD3" ? 2 : 3; // Minimum games
+    const maxGames = series_format === "MD3" ? 3 : 5;
+    const gamesList = Array.from({ length: maxGames }, (_, i) => `Game ${i + 1}`);
+
+    const handleSeriesPick = async (game, champ) => {
+        // Determine who is picking based on game number? 
+        // Logic: Announce First player picks for Game 1, 3, 5? Or Game 1, 2?
+        // "Os jogadores alternam a escolha".
+        // Let's assume AnnounceFirst picks for Game 1.
+        const announceFirstPlayer = announce_turn_player === "A" ? player_a : player_b; // Wait, announce_turn_player toggles.
+        // We used "announce_turn_player" in init setup.
+        // But logic toggles it. So we rely on "setup" logic.
+        // Ideally backend should tell us "current_pick_player".
+        // For now, send "System" or the logged A/B.
+        // Let's just send "Knockout" as player for now since both play same champ.
+        await api.post('/pick', {
+            game,
+            champion: champ.name,
+            image: champ.image,
+            player: "Both"
+        });
+        // We need to refresh state
+        const res = await api.get('/state');
+        onStateUpdate(res.data);
+    };
+
+    const isGamePicked = (game) => picks && picks[game];
+
+    return (
+        <div className="p-8 animate-fade-in flex flex-col items-center gap-8 pb-20">
+            <h2 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-red-500">
+                ⚔️ Duelo {series_format}
+            </h2>
+
+            {/* Draft Header */}
+            <div className="w-full max-w-5xl bg-black/20 p-6 rounded-2xl border border-white/10 mb-8">
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-xl font-bold text-gray-300">Draft de Campeões (Mata-Mata)</h3>
+                    <button onClick={handleFinalize} className="bg-red-500/20 text-red-400 px-4 py-2 rounded hover:bg-red-500/40 border border-red-500/50">
+                        Finalizar Duelo
+                    </button>
+                </div>
+                <div className="flex flex-wrap gap-4 justify-center">
+                    {availablePool.map(c => {
+                        const isUsed = Object.values(picks || {}).some(p => p.champion === c.name);
+                        if (isUsed) return null; // Hide used
+                        return (
+                            <div key={c.name} className="relative group cursor-pointer" draggable onDragStart={(e) => e.dataTransfer.setData("text/plain", JSON.stringify(c))}>
+                                <img src={c.image} className="w-16 h-16 rounded-lg border-2 border-green-500/50 hover:border-green-400 transition-all" title={c.name} />
+                                <div className="absolute -bottom-6 left-0 right-0 text-center text-xs bg-black/80 rounded px-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
+                                    {c.name}
+                                </div>
+                            </div>
+                        );
+                    })}
+                    {availablePool.length === 0 && <span className="text-gray-500 italic">Nenhum campeão disponível</span>}
+                </div>
+
+            </div>
+
+            {/* Matches Grid */}
+            <div className="grid md:grid-cols-3 gap-6 w-full max-w-6xl">
+                {gamesList.map((gameLabel, idx) => {
+                    const pickData = picks ? picks[gameLabel] : null;
+                    const gameNum = idx + 1;
+                    const isDecider = (series_format === "MD3" && gameNum === 3) || (series_format === "MD5" && gameNum === 5);
+
+                    // Logic: Game 1 (P1 picks), Game 2 (P2 picks), etc.
+                    // We assume P1 = player_a for odd games, P2 = player_b for even games unless isDecider.
+                    const picker = (gameNum % 2 !== 0) ? player_a : player_b;
+                    const sideChooser = (picker === player_a) ? player_b : player_a;
+
+                    return (
+                        <div key={gameLabel} className={`relative p-6 rounded-2xl border ${pickData ? 'bg-primary/10 border-primary shadow-[0_0_20px_rgba(212,175,55,0.2)]' : 'bg-white/5 border-white/10 border-dashed'}`}>
+                            <div className="absolute top-4 left-4 text-sm font-bold uppercase tracking-widest opacity-50">{gameLabel}</div>
+
+                            {/* Draft Rules Info */}
+                            {!pickData && !isDecider && (
+                                <div className="absolute top-4 right-4 text-xs text-right opacity-60">
+                                    <div className="text-primary">Pick: {picker}</div>
+                                    <div className="text-gray-400">Lado: {sideChooser}</div>
+                                </div>
+                            )}
+                            {isDecider && (
+                                <div className="absolute top-4 right-4 text-xs text-primary font-bold opacity-80">
+                                    SORTEIO
+                                </div>
+                            )}
+
+                            <div className="mt-8 flex flex-col items-center gap-4">
+                                {pickData ? (
+                                    <>
+                                        <img src={pickData.image} className="w-32 h-32 rounded-full shadow-lg border-4 border-primary" />
+                                        <div className="text-2xl font-bold">{pickData.champion}</div>
+                                        <div className="text-xs bg-black/40 px-3 py-1 rounded-full uppercase text-primary font-bold">Definido</div>
+                                    </>
+                                ) : (
+                                    <div className="w-32 h-32 rounded-full bg-black/20 flex items-center justify-center text-4xl grayscale opacity-30">
+                                        {isDecider ? '🎲' : '❓'}
+                                    </div>
+                                )}
+
+                                {!pickData && (
+                                    <div className="mt-4 w-full flex flex-col gap-2">
+                                        {!isDecider ? (
+                                            <>
+                                                <div className="text-xs text-center text-gray-500">Selecione o Campeão</div>
+                                                <select
+                                                    className="w-full bg-black/40 border border-white/10 rounded p-2 text-sm outline-none focus:border-primary"
+                                                    onChange={(e) => {
+                                                        if (e.target.value) {
+                                                            const c = availablePool.find(x => x.name === e.target.value);
+                                                            if (c) handleSeriesPick(gameLabel, c);
+                                                        }
+                                                    }}
+                                                    value=""
+                                                >
+                                                    <option value="">-- Escolher --</option>
+                                                    {availablePool.filter(c => !Object.values(picks || {}).some(p => p.champion === c.name)).map(c => (
+                                                        <option key={c.name} value={c.name}>{c.name}</option>
+                                                    ))}
+                                                </select>
+                                            </>
+                                        ) : (
+                                            <button
+                                                onClick={async () => {
+                                                    if (!confirm("Realizar sorteio aleatório?")) return;
+                                                    try {
+                                                        const res = await api.post('/random-decider-pick', { game: gameLabel });
+                                                        onStateUpdate(res.data);
+                                                    } catch (err) {
+                                                        alert(err.response?.data?.detail || "Erro no sorteio");
+                                                    }
+                                                }}
+                                                className="bg-primary/20 text-primary border border-primary/50 py-2 rounded hover:bg-primary/40 transition-colors font-bold flex items-center justify-center gap-2"
+                                            >
+                                                <span>🎲</span> Sortear Campeão
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+};
+
+export default KnockoutPhase;

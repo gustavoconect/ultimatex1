@@ -4,6 +4,7 @@ import Sidebar from './components/Sidebar';
 import SetupPhase from './components/SetupPhase';
 import LaneBanPhase from './components/LaneBanPhase';
 import ChoicePhase from './components/ChoicePhase';
+import KnockoutPhase from './components/KnockoutPhase';
 import { initializeSounds, playLockSound, playBanSound } from './sounds';
 
 function App() {
@@ -61,8 +62,9 @@ function App() {
         }
     };
 
-    // Check if we should show ChoicePhase (lane selected, need to draw or already drawn)
-    const showChoicePhase = state.selected_lane;
+    // Groups Phase Logic
+    const isGroupsPhase = state.tournament_phase === "Groups";
+    const showChoicePhase = state.selected_lane && isGroupsPhase;
 
     return (
         <div className="flex min-h-screen bg-bgDark font-outfit text-white selection:bg-primary selection:text-black">
@@ -72,6 +74,9 @@ function App() {
                 history={state.match_history}
                 onNewDuel={handleNewDuel}
                 onFullReset={handleFullReset}
+                tournamentPhase={state.tournament_phase}
+                playerA={state.player_a}
+                playerB={state.player_b}
             />
 
             {/* Main Content */}
@@ -80,7 +85,16 @@ function App() {
                     <SetupPhase onStart={handleSetup} />
                 )}
 
-                {state.setup_complete && !state.selected_lane && (
+                {/* KNOCKOUT PHASE */}
+                {state.setup_complete && state.tournament_phase === "Knockout" && (
+                    <KnockoutPhase
+                        state={state}
+                        onStateUpdate={setState}
+                    />
+                )}
+
+                {/* GROUPS PHASE FLOW */}
+                {state.setup_complete && isGroupsPhase && !state.selected_lane && (
                     <LaneBanPhase
                         bannedLanes={state.banned_lanes}
                         onBan={handleBan}

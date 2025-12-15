@@ -247,7 +247,19 @@ const ChoicePhase = ({ state, onStateUpdate }) => {
 
     return (
         <div className="p-8 animate-fade-in flex flex-col items-center gap-8">
-            <h2 className="text-4xl font-bold text-primary">🎮 Duelo Configurado!</h2>
+            <div className="flex justify-between items-center w-full max-w-4xl">
+                <h2 className="text-4xl font-bold text-primary">🎮 Duelo Configurado!</h2>
+                <button
+                    onClick={async () => {
+                        if (!confirm("Finalizar duelo e salvar no histórico?")) return;
+                        await api.post('/reset-duel');
+                        window.location.reload();
+                    }}
+                    className="bg-red-500/20 text-red-400 px-6 py-2 rounded-xl hover:bg-red-500/40 border border-red-500/50 font-bold transition-all"
+                >
+                    Finalizar Duelo
+                </button>
+            </div>
 
             <div className="grid grid-cols-2 gap-8 w-full max-w-4xl">
                 {/* Game 1 */}

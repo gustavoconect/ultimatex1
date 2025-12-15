@@ -9,7 +9,7 @@ def get_latest_version():
         return response.json()[0]
     except Exception as e:
         print(f"Erro ao buscar versão do Data Dragon: {e}")
-        return "13.24.1" # Fallback version
+        return "15.24.1" # Fallback version
 
 def get_champions_data(version):
     """Fetch champion data for the specific version."""

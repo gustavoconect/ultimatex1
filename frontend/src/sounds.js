@@ -73,10 +73,15 @@ export const playLockSound = () => {
 // Fetch champion data to get IDs for voice lookup
 const loadChampionIds = async () => {
     try {
-        const response = await fetch("https://ddragon.leagueoflegends.com/cdn/13.24.1/data/pt_BR/champion.json");
+        const response = await fetch("https://ddragon.leagueoflegends.com/cdn/15.24.1/data/pt_BR/champion.json");
         const data = await response.json();
         Object.values(data.data).forEach(champ => {
-            championIdMap[champ.id] = champ.key; // id is name, key is numeric ID
+            // Map both Name (Wukong) and ID (MonkeyKing) to Key (62)
+            championIdMap[champ.name] = champ.key;
+            championIdMap[champ.id] = champ.key;
+
+            // Handle edge cases manually if needed
+            if (champ.id === "MonkeyKing") championIdMap["Wukong"] = champ.key;
         });
     } catch (e) {
         // Silently fail - champion voices will fallback to lock sound

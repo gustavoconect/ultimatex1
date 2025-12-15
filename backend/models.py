@@ -8,6 +8,9 @@ class PlayerSetup(BaseModel):
     player_b: str
     elo_b: str
     pdl_b: int = 0
+    tournament_phase: str = "Groups" # "Groups" or "Knockout"
+    series_format: Optional[str] = "MD2" # MD2, MD3, MD5
+    announce_first: Optional[str] = None # Name of player who announces first
 
 class GameState(BaseModel):
     setup_complete: bool
@@ -15,14 +18,33 @@ class GameState(BaseModel):
     player_b: str
     elo_a: str
     elo_b: str
+    tournament_phase: str
+    series_format: str
+    series_score: Dict[str, int] # {"A": 0, "B": 0}
     start_player: Optional[str]
     current_action_player: Optional[str]
+    announce_turn_player: Optional[str] # For Knockout announcements
+    
     banned_lanes: List[str]
     selected_lane: Optional[str]
+    
+    # Groups Phase Data
     drawn_champions: List[str]
-    picks: Dict[str, str]
+    
+    # Knockout Phase Data
+    announced_champions: Dict[str, List[str]] # {"A": [], "B": []}
+    knockout_bans: List[str] # Champions banned in knockout phase
+    
+    picks: Dict[str, str] # Game 1 -> Champ, Game 2 -> Champ, etc.
     global_blacklist: List[Dict] # [{name, image, phase}]
-    tournament_phase: str
+
+class ChampionAnnounceRequest(BaseModel):
+    champion: str
+    image: str
+
+class KnockoutBanRequest(BaseModel):
+    champion: str
+
 
 class BanLaneRequest(BaseModel):
     lane: str

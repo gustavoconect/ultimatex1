@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api';
 
-const Sidebar = ({ blacklist, history, onNewDuel, onFullReset }) => {
+const Sidebar = ({ blacklist, history, onNewDuel, onFullReset, tournamentPhase, playerA, playerB }) => {
     const [champions, setChampions] = useState({});
     const [showHistory, setShowHistory] = useState(false);
     const [collapsedLanes, setCollapsedLanes] = useState({});
@@ -12,10 +12,34 @@ const Sidebar = ({ blacklist, history, onNewDuel, onFullReset }) => {
     const [editingPlayer, setEditingPlayer] = useState(null);
     const [formData, setFormData] = useState({ name: "", elo: "Ferro IV", pdl: 0 });
 
+    /* Blocked Champions State */
+    const [showBlocked, setShowBlocked] = useState(false);
+    const [selectedPlayer, setSelectedPlayer] = useState(null);
+    const [blockedChamps, setBlockedChamps] = useState([]);
+
+    /* Knockout View: blocked for current players */
+    const [blockedA, setBlockedA] = useState([]);
+    const [blockedB, setBlockedB] = useState([]);
+
     useEffect(() => {
         fetchPlayers();
         api.get('/champions-all').then(res => setChampions(res.data));
     }, []);
+
+    // Fetch blocked champions when in Knockout phase
+    useEffect(() => {
+        if (tournamentPhase === 'Knockout' && playerA && playerB) {
+            api.get(`/blocked-champions/${playerA}`).then(res => setBlockedA(res.data));
+            api.get(`/blocked-champions/${playerB}`).then(res => setBlockedB(res.data));
+        }
+    }, [tournamentPhase, playerA, playerB]);
+
+    const fetchBlocked = async (playerName) => {
+        const res = await api.get(`/blocked-champions/${playerName}`);
+        setBlockedChamps(res.data);
+        setSelectedPlayer(playerName);
+        setShowBlocked(true);
+    };
 
     const fetchPlayers = () => {
         api.get('/players').then(res => setPlayers(res.data));
@@ -82,36 +106,67 @@ const Sidebar = ({ blacklist, history, onNewDuel, onFullReset }) => {
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
-                    {Object.entries(champions).map(([lane, list]) => (
-                        <div key={lane} className="bg-white/5 rounded-lg overflow-hidden">
-                            <button
-                                onClick={() => toggleLane(lane)}
-                                className="w-full flex justify-between items-center p-3 bg-white/5 hover:bg-white/10 transition-colors"
-                            >
-                                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">{lane} ({list.length})</span>
-                                <span className="text-gray-500 text-xs">{collapsedLanes[lane] ? "▼" : "▲"}</span>
-                            </button>
+                    {tournamentPhase === 'Knockout' && playerA && playerB ? (
+                        /* Knockout Mode: Show blocked champions per player */
+                        <>
+                            <div className="bg-blue-500/10 rounded-lg p-4 border border-blue-500/20">
+                                <h3 className="text-sm font-bold text-blue-400 mb-3 uppercase">🚫 {playerA}</h3>
+                                {blockedA.length === 0 ? (
+                                    <p className="text-xs text-gray-500">Nenhum campeão bloqueado</p>
+                                ) : (
+                                    <div className="flex flex-wrap gap-2">
+                                        {blockedA.map(c => (
+                                            <img key={c.name} src={c.image} title={c.name} className="w-10 h-10 rounded-full border border-red-500 grayscale opacity-60" />
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                            <div className="bg-red-500/10 rounded-lg p-4 border border-red-500/20">
+                                <h3 className="text-sm font-bold text-red-400 mb-3 uppercase">🚫 {playerB}</h3>
+                                {blockedB.length === 0 ? (
+                                    <p className="text-xs text-gray-500">Nenhum campeão bloqueado</p>
+                                ) : (
+                                    <div className="flex flex-wrap gap-2">
+                                        {blockedB.map(c => (
+                                            <img key={c.name} src={c.image} title={c.name} className="w-10 h-10 rounded-full border border-red-500 grayscale opacity-60" />
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </>
+                    ) : (
+                        /* Groups Mode: Show all champions by lane */
+                        Object.entries(champions).map(([lane, list]) => (
+                            <div key={lane} className="bg-white/5 rounded-lg overflow-hidden">
+                                <button
+                                    onClick={() => toggleLane(lane)}
+                                    className="w-full flex justify-between items-center p-3 bg-white/5 hover:bg-white/10 transition-colors"
+                                >
+                                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">{lane} ({list.length})</span>
+                                    <span className="text-gray-500 text-xs">{collapsedLanes[lane] ? "▼" : "▲"}</span>
+                                </button>
 
-                            {!collapsedLanes[lane] && (
-                                <div className="p-3 flex flex-wrap gap-1 justify-center bg-black/20">
-                                    {list.map(c => {
-                                        const isBanned = blacklistNames.includes(c.name);
-                                        return (
-                                            <img
-                                                key={c.name}
-                                                src={c.image}
-                                                title={c.name}
-                                                className={`w-8 h-8 rounded-full border border-white/10 transition-all duration-300 ${isBanned
-                                                    ? 'grayscale opacity-30'
-                                                    : 'hover:scale-125 hover:border-primary hover:z-20 cursor-help'
-                                                    }`}
-                                            />
-                                        )
-                                    })}
-                                </div>
-                            )}
-                        </div>
-                    ))}
+                                {!collapsedLanes[lane] && (
+                                    <div className="p-3 flex flex-wrap gap-1 justify-center bg-black/20">
+                                        {list.map(c => {
+                                            const isBanned = blacklistNames.includes(c.name);
+                                            return (
+                                                <img
+                                                    key={c.name}
+                                                    src={c.image}
+                                                    title={c.name}
+                                                    className={`w-8 h-8 rounded-full border border-white/10 transition-all duration-300 ${isBanned
+                                                        ? 'grayscale opacity-30'
+                                                        : 'hover:scale-125 hover:border-primary hover:z-20 cursor-help'
+                                                        }`}
+                                                />
+                                            )
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        ))
+                    )}
                 </div>
             </div>
 
@@ -127,36 +182,39 @@ const Sidebar = ({ blacklist, history, onNewDuel, onFullReset }) => {
                             {(!history || history.length === 0) ? (
                                 <div className="text-center text-gray-500 py-10">Nenhum duelo registrado.</div>
                             ) : (
-                                history.map((match) => (
-                                    <div key={match.id} className="bg-bgDark p-4 rounded-xl border border-white/5 flex flex-col gap-4">
-                                        <div className="flex justify-between items-center border-b border-white/5 pb-2">
-                                            <span className="text-primary font-bold text-lg">Duelo #{match.id}</span>
-                                            <span className="text-xs uppercase bg-white/10 px-2 py-1 rounded">{match.phase} - {match.lane}</span>
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="bg-blue-500/5 p-3 rounded-lg border border-blue-500/10">
-                                                <div className="text-sm text-blue-400 font-bold mb-2">JOGO 1</div>
-                                                <div className="flex items-center gap-3">
-                                                    <img src={match.game_1.image} className="w-10 h-10 rounded-full border border-blue-500" />
-                                                    <div>
-                                                        <div className="font-bold text-sm">{match.game_1.champion}</div>
-                                                        <div className="text-xs text-gray-400">{match.player_a} vs {match.player_b}</div>
-                                                    </div>
-                                                </div>
+                                history.map((match) => {
+                                    // Get all game keys dynamically
+                                    const gameKeys = Object.keys(match).filter(k => k.startsWith('game_')).sort();
+                                    const colors = ['blue', 'red', 'purple', 'green', 'yellow'];
+
+                                    return (
+                                        <div key={match.id} className="bg-bgDark p-4 rounded-xl border border-white/5 flex flex-col gap-4">
+                                            <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                                                <span className="text-primary font-bold text-lg">Duelo #{match.id}</span>
+                                                <span className="text-xs uppercase bg-white/10 px-2 py-1 rounded">{match.phase} {match.format ? `- ${match.format}` : match.lane ? `- ${match.lane}` : ''}</span>
                                             </div>
-                                            <div className="bg-red-500/5 p-3 rounded-lg border border-red-500/10">
-                                                <div className="text-sm text-red-400 font-bold mb-2">JOGO 2</div>
-                                                <div className="flex items-center gap-3">
-                                                    <img src={match.game_2.image} className="w-10 h-10 rounded-full border border-red-500" />
-                                                    <div>
-                                                        <div className="font-bold text-sm">{match.game_2.champion}</div>
-                                                        <div className="text-xs text-gray-400">{match.player_a} vs {match.player_b}</div>
-                                                    </div>
-                                                </div>
+                                            <div className={`grid gap-4 ${gameKeys.length <= 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+                                                {gameKeys.map((gameKey, idx) => {
+                                                    const game = match[gameKey];
+                                                    if (!game || !game.champion) return null;
+                                                    const gameNum = gameKey.replace('game_', '').toUpperCase();
+                                                    return (
+                                                        <div key={gameKey} className="bg-primary/5 p-3 rounded-lg border border-primary/20">
+                                                            <div className="text-sm text-primary font-bold mb-2">JOGO {gameNum}</div>
+                                                            <div className="flex items-center gap-3">
+                                                                <img src={game.image} className="w-10 h-10 rounded-full border border-primary" />
+                                                                <div>
+                                                                    <div className="font-bold text-sm">{game.champion}</div>
+                                                                    <div className="text-xs text-gray-400">{match.player_a} vs {match.player_b}</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
                                             </div>
                                         </div>
-                                    </div>
-                                )).reverse()
+                                    );
+                                }).reverse()
                             )}
                         </div>
                     </div>
@@ -242,16 +300,48 @@ const Sidebar = ({ blacklist, history, onNewDuel, onFullReset }) => {
                                                     EDITAR
                                                 </button>
                                                 <button
+                                                    onClick={() => fetchBlocked(name)}
+                                                    className="bg-purple-500/20 text-purple-400 p-2 rounded hover:bg-purple-500/40 transition-all text-xs font-bold"
+                                                >
+                                                    🚫
+                                                </button>
+                                                <button
                                                     onClick={() => handleDeletePlayer(name)}
                                                     className="bg-red-500/20 text-red-400 p-2 rounded hover:bg-red-500/40 transition-all text-xs font-bold"
                                                 >
-                                                    REMOVER
+                                                    ✕
                                                 </button>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Blocked Champions Modal */}
+            {showBlocked && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-8 animate-fade-in">
+                    <div className="bg-cardBg w-full max-w-lg max-h-[60vh] rounded-2xl border border-white/10 flex flex-col shadow-2xl">
+                        <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/5 rounded-t-2xl">
+                            <h2 className="text-xl font-bold flex items-center gap-2">🚫 Bloqueados - {selectedPlayer}</h2>
+                            <button onClick={() => setShowBlocked(false)} className="text-gray-400 hover:text-white text-2xl font-bold">&times;</button>
+                        </div>
+                        <div className="p-6 overflow-y-auto">
+                            {blockedChamps.length === 0 ? (
+                                <div className="text-center text-gray-500 py-6">Nenhum campeão bloqueado no Mata-Mata.</div>
+                            ) : (
+                                <div className="flex flex-wrap gap-3 justify-center">
+                                    {blockedChamps.map(c => (
+                                        <div key={c.name} className="flex flex-col items-center gap-1 bg-red-500/10 p-2 rounded-lg border border-red-500/20">
+                                            <img src={c.image} className="w-12 h-12 rounded-full border border-red-500 grayscale" />
+                                            <span className="text-xs text-red-400 font-bold">{c.name}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

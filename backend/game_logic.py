@@ -30,7 +30,12 @@ class GameManager:
             # Persistent
             "global_blacklist": get_saved_blacklist(),
             "match_history": get_match_history(),
-            "tournament_phase": "Groups"
+            "tournament_phase": "Groups",
+            "series_format": "MD2",
+            "series_score": {"A": 0, "B": 0},
+            "announce_turn_player": None,
+            "announced_champions": {"A": [], "B": []},
+            "knockout_bans": []
         }
 
     def reset_duel(self):
@@ -60,7 +65,12 @@ class GameManager:
             "game1_sides": {},
             "global_blacklist": saved_bl,
             "match_history": saved_hist,
-            "tournament_phase": "Groups"
+            "tournament_phase": "Groups",
+            "series_format": "MD2",
+            "series_score": {"A": 0, "B": 0},
+            "announce_turn_player": None,
+            "announced_champions": {"A": [], "B": []},
+            "knockout_bans": []
         }
 
     def full_reset(self):
@@ -70,13 +80,23 @@ class GameManager:
         self.state["match_history"] = []
         self.reset_duel()
 
-    def setup_game(self, p1, e1, pdl1, p2, e2, pdl2):
+    def setup_game(self, p1, e1, pdl1, p2, e2, pdl2, phase="Groups", series="MD2", announce_first=None):
         self.state["player_a"] = p1
         self.state["elo_a"] = e1
         self.state["pdl_a"] = pdl1
         self.state["player_b"] = p2
         self.state["elo_b"] = e2
         self.state["pdl_b"] = pdl2
+        self.state["tournament_phase"] = phase
+        self.state["series_format"] = series
+        
+        # Set announce start (for Knockout)
+        if phase == "Knockout":
+            self.state["global_blacklist"] = []
+            save_blacklist([])
+            
+            if announce_first:
+                self.state["announce_turn_player"] = "A" if announce_first == p1 else "B"
         
         # Calculate starter (Higher Elo starts banning, PDL as tie-breaker)
         val_a = ELO_HIERARCHY.get(e1, 0)
@@ -118,6 +138,10 @@ class GameManager:
                 self.state["selected_lane"] = remaining
 
     def draw_champions(self):
+        # Disable draw for Knockout Phase
+        if self.state["tournament_phase"] == "Knockout":
+            return
+
         lane = self.state["selected_lane"]
         if not lane:
             return
@@ -176,17 +200,70 @@ class GameManager:
             "image": image
         }
         
-        # Add to global blacklist
-        self.state["global_blacklist"].append({
-            "name": champion,
-            "image": image,
-            "phase": self.state["tournament_phase"],
-            "player": player_name
-        })
-        save_blacklist(self.state["global_blacklist"])
+        # Add to global blacklist ONLY if Groups phase
+        if self.state["tournament_phase"] == "Groups":
+            self.state["global_blacklist"].append({
+                "name": champion,
+                "image": image,
+                "phase": self.state["tournament_phase"],
+                "player": player_name
+            })
+            save_blacklist(self.state["global_blacklist"])
         
         # Update Personal History
+        # Update Personal History
         update_player_history_db(player_name, champion)
+
+    # ========== KNOCKOUT PHASE METHODS ==========
+
+    def get_knockout_history(self, player_name):
+        """Get champions PLAYED in matches where THIS player participated.
+        Only blocks champions from matches where this specific player was involved."""
+        used = set()
+        for m in self.state["match_history"]:
+            if m.get("phase") == "Knockout":
+                # Only check if THIS player was in this match
+                if m.get("player_a") == player_name or m.get("player_b") == player_name:
+                    # Get all played champions from this match
+                    for key in m:
+                        if key.startswith("game_") and isinstance(m[key], dict):
+                            champ = m[key].get("champion")
+                            if champ:
+                                used.add(champ)
+        return used
+
+    def announce_champion(self, champion, image):
+        player_key = self.state["announce_turn_player"] # "A" or "B"
+        player_name = self.state[f"player_{player_key.lower()}"]
+        
+        # Check if already announced in this series by ANYONE
+        all_announced = [c['name'] for c in self.state["announced_champions"]["A"]] + \
+                        [c['name'] for c in self.state["announced_champions"]["B"]]
+        if champion in all_announced:
+            return {"error": "Campeão já anunciado nesta série!"}
+
+        # Check global Knockout history - champions that were PLAYED (not just announced)
+        # This blocks for BOTH players since they share champions
+        played_history = self.get_knockout_history(player_name)
+        if champion in played_history:
+            return {"error": f"{champion} já foi utilizado no Mata-Mata!"}
+            
+        # Add to list
+        self.state["announced_champions"][player_key].append({
+            "name": champion, "image": image
+        })
+        
+        # Switch turn
+        self.state["announce_turn_player"] = "B" if player_key == "A" else "A"
+        return self.state
+
+    def ban_announced_champion(self, champion):
+        if champion not in self.state["knockout_bans"]:
+            self.state["knockout_bans"].append(champion)
+            
+            # Logic: If both players banned, move to next step?
+            # For now just add to banned list. Frontend handles flow.
+        return self.state
 
     # ========== RULE 6: Choice Phase Methods ==========
     
@@ -271,6 +348,59 @@ class GameManager:
                 "player": "Manual"
             })
              save_blacklist(self.state["global_blacklist"])
+
+    def archive_knockout_series(self):
+        """Save Knockout series to history."""
+        record = {
+            "id": len(self.state["match_history"]) + 1,
+            "player_a": self.state["player_a"],
+            "player_b": self.state["player_b"],
+            "phase": "Knockout",
+            "format": self.state["series_format"],
+            "score": self.state["series_score"]
+        }
+        # Add games dynamically (game_1, game_2, game_3...)
+        for g in self.state["picks"]:
+            key = g.lower().replace(" ", "_")
+            record[key] = self.state["picks"][g]
+        
+        # Save announced champions per player for history tracking
+        record[f"announced_by_{self.state['player_a']}"] = [c['name'] for c in self.state['announced_champions']['A']]
+        record[f"announced_by_{self.state['player_b']}"] = [c['name'] for c in self.state['announced_champions']['B']]
+
+        self.state["match_history"].append(record)
+        save_match_history(self.state["match_history"])
+
+    def get_decider_champion(self):
+        # Flatten all known champions
+        all_champs = set()
+        for lane in LANE_CHAMPIONS:
+            all_champs.update(LANE_CHAMPIONS[lane])
+        
+        # Get Global Knockout History (All players)
+        used = set()
+        for m in self.state["match_history"]:
+            if m.get("phase") == "Knockout":
+                for k, v in m.items():
+                    if k.startswith("game_") and isinstance(v, dict):
+                        used.add(v["champion"])
+        
+        # Also exclude currently announced in this series
+        current = set()
+        for p in ["A", "B"]:
+            for c in self.state["announced_champions"][p]:
+                current.add(c["name"])
+        
+        available = list(all_champs - used - current)
+        if not available:
+            return None
+            
+        import random
+        # Return name and image (using utils would be better but we need self access?) 
+        # We need image URL.
+        # We can construct it or fetch it.
+        # Let's return just name, main.py will handle image fetching.
+        return random.choice(available)
 
     def set_phase(self, phase):
         self.state["tournament_phase"] = phase

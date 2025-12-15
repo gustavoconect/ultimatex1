@@ -4,7 +4,7 @@ from typing import List, Optional
 import uvicorn
 import random
 
-from .models import PlayerSetup, BanLaneRequest, PickRequest, BlacklistAddRequest, PlayerRegisterRequest
+from .models import PlayerSetup, BanLaneRequest, PickRequest, BlacklistAddRequest, PlayerRegisterRequest, ChampionAnnounceRequest, KnockoutBanRequest, BaseModel
 from .game_logic import game_instance
 from .utils import get_latest_version, get_champions_data, get_champion_image_url
 from .constants import LANE_CHAMPIONS
@@ -44,7 +44,8 @@ def setup_game(setup: PlayerSetup):
     
     game_instance.setup_game(
         setup.player_a, setup.elo_a, setup.pdl_a,
-        setup.player_b, setup.elo_b, setup.pdl_b
+        setup.player_b, setup.elo_b, setup.pdl_b,
+        setup.tournament_phase, setup.series_format, setup.announce_first
     )
     return game_instance.state
 
@@ -106,17 +107,35 @@ def manual_blacklist(req: BlacklistAddRequest):
     game_instance.add_manual_blacklist(req.champion, req.image)
     return game_instance.state
 
-@app.post("/start-matamata")
-def start_matamata():
-    # Only resets blacklist if logic requires, but per requested flow, we have explicit buttons
-    # Here we just set phase
-    game_instance.set_phase("Mata-Mata")
-    game_instance.reset_duel() # Usually implies a new clean slate but keeping blacklist
-    game_instance.state["global_blacklist"] = [] # Wait, prompt said "Reset automático da blacklist da fase de grupos" for Knockout?
-    # Actually tab 5 says "Reset automático... Opção de resetar".
-    # User button usually does it.
-    from .data_manager import save_blacklist
-    save_blacklist([])
+@app.post("/announce-champion")
+def announce_champion(req: ChampionAnnounceRequest):
+    res = game_instance.announce_champion(req.champion, req.image)
+    if "error" in res:
+        raise HTTPException(status_code=400, detail=res["error"])
+    return res
+
+@app.post("/knockout-ban")
+def knockout_ban(req: KnockoutBanRequest):
+    game_instance.ban_announced_champion(req.champion)
+    return game_instance.state
+
+@app.post("/finish-knockout")
+def finish_knockout():
+    game_instance.archive_knockout_series()
+    game_instance.reset_duel()
+    return game_instance.state
+
+class DeciderRequest(BaseModel):
+    game: str
+
+@app.post("/random-decider-pick")
+def random_decider_pick(req: DeciderRequest):
+    champ_name = game_instance.get_decider_champion()
+    if not champ_name:
+        raise HTTPException(status_code=400, detail="Sem campeões disponíveis para sorteio!")
+    
+    image = get_champion_image_url(champ_name, ddragon_version, champions_data)
+    game_instance.pick_champion(req.game, champ_name, image, "Sorteio")
     return game_instance.state
 
 @app.post("/register-player")
@@ -146,6 +165,18 @@ def get_all_champions():
              })
         res[lane] = data
     return res
+
+@app.get("/blocked-champions/{player_name}")
+def get_blocked_champions(player_name: str):
+    """Get list of champions blocked for a specific player in Knockout phase."""
+    blocked = game_instance.get_knockout_history(player_name)
+    result = []
+    for champ_name in blocked:
+        result.append({
+            "name": champ_name,
+            "image": get_champion_image_url(champ_name, ddragon_version, champions_data)
+        })
+    return result
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

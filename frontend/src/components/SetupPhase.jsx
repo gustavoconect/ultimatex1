@@ -7,6 +7,11 @@ const SetupPhase = ({ onStart }) => {
     const [playerA, setPlayerA] = useState("");
     const [playerB, setPlayerB] = useState("");
 
+    // Knockout Config
+    const [tournamentPhase, setTournamentPhase] = useState("Groups");
+    const [seriesFormat, setSeriesFormat] = useState("MD3");
+    const [announceFirst, setAnnounceFirst] = useState("");
+
     useEffect(() => {
         api.get('/players').then(res => setPlayers(res.data));
     }, []);
@@ -22,25 +27,90 @@ const SetupPhase = ({ onStart }) => {
             return;
         }
 
+        if (tournamentPhase === "Knockout" && !announceFirst) {
+            alert("Selecione quem anuncia primeiro (pior campanha)!");
+            return;
+        }
+
         const dataA = getPlayerData(playerA);
         const dataB = getPlayerData(playerB);
 
         onStart({
             player_a: playerA, elo_a: dataA.elo, pdl_a: dataA.pdl,
-            player_b: playerB, elo_b: dataB.elo, pdl_b: dataB.pdl
+            player_b: playerB, elo_b: dataB.elo, pdl_b: dataB.pdl,
+            tournament_phase: tournamentPhase,
+            series_format: seriesFormat,
+            announce_first: announceFirst
         });
     };
 
     return (
         <div className="max-w-4xl mx-auto p-6 animate-fade-in">
-            <div className="text-center mb-10">
+            <div className="text-center mb-8">
                 <h1 className="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-yellow-200 mb-4">
                     Configuração do Duelo
                 </h1>
-                <p className="text-gray-400">Selecione os competidores registrados</p>
+
+                {/* Phase Selection Toggle */}
+                <div className="flex justify-center gap-4 mb-6">
+                    <button
+                        type="button"
+                        onClick={() => setTournamentPhase("Groups")}
+                        className={`px-6 py-2 rounded-full font-bold transition-all ${tournamentPhase === "Groups"
+                            ? "bg-primary text-black shadow-[0_0_20px_rgba(212,175,55,0.4)]"
+                            : "bg-white/5 text-gray-400 hover:bg-white/10"
+                            }`}
+                    >
+                        Fase de Grupos (MD2)
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setTournamentPhase("Knockout")}
+                        className={`px-6 py-2 rounded-full font-bold transition-all ${tournamentPhase === "Knockout"
+                            ? "bg-red-500 text-white shadow-[0_0_20px_rgba(239,68,68,0.4)]"
+                            : "bg-white/5 text-gray-400 hover:bg-white/10"
+                            }`}
+                    >
+                        Mata-Mata (MD3/MD5)
+                    </button>
+                </div>
             </div>
 
             <form onSubmit={handleSubmit} className="bg-cardBg p-8 rounded-2xl border border-white/5 shadow-2xl backdrop-blur-md">
+
+                {/* Knockout Settings */}
+                {tournamentPhase === "Knockout" && (
+                    <div className="mb-8 bg-red-500/5 border border-red-500/20 p-6 rounded-xl animate-fade-in">
+                        <h3 className="text-red-400 font-bold mb-4 uppercase tracking-wider text-sm">Configuração Mata-Mata</h3>
+                        <div className="grid grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-sm text-gray-400 mb-2">Formato da Série</label>
+                                <select
+                                    value={seriesFormat}
+                                    onChange={e => setSeriesFormat(e.target.value)}
+                                    className="w-full bg-bgDark border border-white/10 rounded-lg p-3 text-white outline-none"
+                                >
+                                    <option value="MD3">Melhor de 3 (MD3)</option>
+                                    <option value="MD5">Melhor de 5 (MD5)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm text-gray-400 mb-2">Quem teve a Pior Campanha? (Anuncia 1º)</label>
+                                <select
+                                    value={announceFirst}
+                                    onChange={e => setAnnounceFirst(e.target.value)}
+                                    className="w-full bg-bgDark border border-white/10 rounded-lg p-3 text-white outline-none"
+                                    required
+                                >
+                                    <option value="">-- Selecione --</option>
+                                    {playerA && <option value={playerA}>{playerA}</option>}
+                                    {playerB && <option value={playerB}>{playerB}</option>}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 <div className="grid md:grid-cols-2 gap-12">
                     {/* Player A */}
                     <div className="space-y-4">
@@ -49,7 +119,10 @@ const SetupPhase = ({ onStart }) => {
                             <label className="block text-sm text-gray-400 mb-2">Selecione o Jogador</label>
                             <select
                                 value={playerA}
-                                onChange={e => setPlayerA(e.target.value)}
+                                onChange={e => {
+                                    setPlayerA(e.target.value);
+                                    if (tournamentPhase === "Knockout" && announceFirst === playerA) setAnnounceFirst("");
+                                }}
                                 className="w-full bg-bgDark border border-white/10 rounded-lg p-3 text-white focus:border-primary outline-none text-lg"
                                 required
                             >
@@ -78,7 +151,10 @@ const SetupPhase = ({ onStart }) => {
                             <label className="block text-sm text-gray-400 mb-2">Selecione o Jogador</label>
                             <select
                                 value={playerB}
-                                onChange={e => setPlayerB(e.target.value)}
+                                onChange={e => {
+                                    setPlayerB(e.target.value);
+                                    if (tournamentPhase === "Knockout" && announceFirst === playerB) setAnnounceFirst("");
+                                }}
                                 className="w-full bg-bgDark border border-white/10 rounded-lg p-3 text-white focus:border-red-500 outline-none text-lg"
                                 required
                             >
@@ -107,7 +183,7 @@ const SetupPhase = ({ onStart }) => {
                         className="w-full bg-gradient-to-r from-primary to-yellow-600 hover:to-yellow-500 text-black font-bold py-4 rounded-xl text-xl uppercase tracking-widest transition-all hover:scale-[1.01] hover:shadow-[0_0_25px_rgba(212,175,55,0.4)] flex items-center justify-center gap-3"
                     >
                         <Sword className="w-6 h-6" />
-                        Iniciar Confronto
+                        Iniciar {tournamentPhase === "Groups" ? "Fase de Grupos" : "Mata-Mata"}
                     </button>
                 </div>
             </form>
