@@ -131,8 +131,16 @@ const KnockoutPhase = ({ state, onStateUpdate }) => {
                             placeholder="Buscar campeão..."
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
-                            className="w-full bg-bgDark border border-white/20 rounded-lg p-4 text-white focus:border-primary outline-none text-lg"
+                            className="w-full bg-bgDark border border-white/20 rounded-lg p-4 text-white focus:border-primary outline-none text-lg pr-10"
                         />
+                        {searchTerm && (
+                            <button
+                                onClick={() => setSearchTerm("")}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white text-xl font-bold z-10"
+                            >
+                                &times;
+                            </button>
+                        )}
                         {searchTerm && (
                             <div className="absolute top-full left-0 right-0 bg-bgDark border border-white/20 max-h-60 overflow-y-auto z-50 rounded-b-lg shadow-xl">
                                 {filteredChamps.map(c => (
