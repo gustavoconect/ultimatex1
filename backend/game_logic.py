@@ -329,8 +329,7 @@ class GameManager:
     def remove_player(self, name):
         return remove_player_db(name)
 
-    def update_player_data(self, name, elo=None, pdl=None):
-        update_player_data_db(name, elo, pdl)
+
 
     def get_registered_players(self):
         return get_players()
