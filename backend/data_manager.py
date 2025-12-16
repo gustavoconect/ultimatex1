@@ -167,7 +167,11 @@ def get_players():
 
 def register_player_db(name, elo, pdl):
     players = db.get_players()
-    players[name] = {"elo": elo, "pdl": pdl, "wins": 0, "losses": 0, "history": []}
+    if name in players:
+        players[name]["elo"] = elo
+        players[name]["pdl"] = pdl
+    else:
+        players[name] = {"elo": elo, "pdl": pdl, "wins": 0, "losses": 0, "history": []}
     db.save_players(players)
 
 def remove_player_db(name):
