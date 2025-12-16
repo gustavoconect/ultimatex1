@@ -354,8 +354,12 @@ class GameManager:
     def archive_current_match(self):
         """Save current picks to history."""
         if "Game 1" in self.state["picks"] and "Game 2" in self.state["picks"]:
+            # Calculate next ID based on MAX existing ID to prevent overwrites if history has gaps
+            current_ids = [m.get("id", 0) for m in self.state["match_history"]]
+            next_id = max(current_ids, default=0) + 1
+
             record = {
-                "id": len(self.state["match_history"]) + 1,
+                "id": next_id,
                 "player_a": self.state["player_a"],
                 "player_b": self.state["player_b"],
                 "lane": self.state["selected_lane"],
@@ -379,8 +383,12 @@ class GameManager:
 
     def archive_knockout_series(self):
         """Save Knockout series to history."""
+        # Calculate next ID based on MAX existing ID
+        current_ids = [m.get("id", 0) for m in self.state["match_history"]]
+        next_id = max(current_ids, default=0) + 1
+
         record = {
-            "id": len(self.state["match_history"]) + 1,
+            "id": next_id,
             "player_a": self.state["player_a"],
             "player_b": self.state["player_b"],
             "phase": "Knockout",
