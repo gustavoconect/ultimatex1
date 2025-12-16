@@ -56,6 +56,9 @@ class GameManager:
         """Reset duel state but keep blacklist and history."""
         saved_bl = self.state["global_blacklist"]
         saved_hist = self.state["match_history"]
+        # Preserve version if it exists, else default to a newer one
+        current_version = self.state.get("version", "15.24.1")
+        
         self.state = {
             "setup_complete": False,
             "player_a": "",
@@ -84,7 +87,8 @@ class GameManager:
             "series_score": {"A": 0, "B": 0},
             "announce_turn_player": None,
             "announced_champions": {"A": [], "B": []},
-            "knockout_bans": []
+            "knockout_bans": [],
+            "version": current_version # Restore version
         }
 
     def full_reset(self):
@@ -212,7 +216,7 @@ class GameManager:
 
         self.state["drawn_champions"] = []
         for name in drawn_names:
-            image = get_champion_image_url(name, self.state.get("version", "13.24.1"), self.champions_data)
+            image = get_champion_image_url(name, self.state.get("version", "15.24.1"), self.champions_data)
             self.state["drawn_champions"].append({
                 "name": name,
                 "image": image
