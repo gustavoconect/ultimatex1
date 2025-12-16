@@ -38,6 +38,9 @@ class GameManager:
             "knockout_bans": []
         }
 
+    def update_player_data(self, name, elo, pdl):
+        register_player_db(name, elo, pdl)
+
     def reset_duel(self):
         """Reset duel state but keep blacklist and history."""
         saved_bl = self.state["global_blacklist"]
