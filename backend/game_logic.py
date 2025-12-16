@@ -41,6 +41,15 @@ class GameManager:
     def update_player_data(self, name, elo, pdl):
         register_player_db(name, elo, pdl)
 
+    def register_player(self, name, elo, pdl):
+        register_player_db(name, elo, pdl)
+
+    def get_registered_players(self):
+        return get_players()
+
+    def remove_player(self, name):
+        remove_player_db(name)
+
     def reset_duel(self):
         """Reset duel state but keep blacklist and history."""
         saved_bl = self.state["global_blacklist"]
