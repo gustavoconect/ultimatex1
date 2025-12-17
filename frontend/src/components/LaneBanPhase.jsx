@@ -1,5 +1,6 @@
 import React from 'react';
 import { Ban } from 'lucide-react';
+import { playBanSound } from '../SoundManager';
 
 const LANES = ["Top", "Jungle", "Mid", "ADC", "Support"];
 
@@ -28,7 +29,10 @@ const LaneBanPhase = ({ bannedLanes, onBan, currentPlayer, currentPlayerName }) 
                         <button
                             key={lane}
                             disabled={isBanned}
-                            onClick={() => onBan(lane)}
+                            onClick={() => {
+                                playBanSound();
+                                onBan(lane);
+                            }}
                             style={{ animationDelay: `${idx * 100}ms` }}
                             className={`
                 h-40 rounded-xl border-2 flex flex-col items-center justify-center gap-4 transition-all duration-300 animate-slide-up
