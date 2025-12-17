@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../api';
 import ChampionCard from './ChampionCard';
 import DraftReveal from './DraftReveal';
-import { playLockSound, playBanSound, playChampionVoice } from '../sounds';
+import { playLockSound, playBanSound, playChampionVoice } from '../SoundManager';
 
 const KnockoutPhase = ({ state, onStateUpdate }) => {
     const {
@@ -223,43 +223,50 @@ const KnockoutPhase = ({ state, onStateUpdate }) => {
     const availablePool = allAnnounced.filter(c => !knockout_bans.includes(c.name));
 
     const handleSeriesPick = async (game, champ) => {
-        // Determine who is picking based on game number? 
-        // Logic: Announce First player picks for Game 1, 3, 5? Or Game 1, 2?
-        // "Os jogadores alternam a escolha".
-        // Let's assume AnnounceFirst picks for Game 1.
         playChampionVoice(champ.name);
-        const announceFirstPlayer = announce_turn_player === "A" ? player_a : player_b; // Wait, announce_turn_player toggles.
-        // We used "announce_turn_player" in init setup.
-        // But logic toggles it. So we rely on "setup" logic.
-        // Ideally backend should tell us "current_pick_player".
-        // For now, send "System" or the logged A/B.
-        // Let's just send "Knockout" as player for now since both play same champ.
         await api.post('/pick', {
             game,
             champion: champ.name,
             image: champ.image,
             player: "Both"
         });
-        // We need to refresh state
         const res = await api.get('/state');
         onStateUpdate(res.data);
     };
 
     const isGamePicked = (game) => picks && picks[game];
 
+    // Determine Logic for Reveal Side (Announcer = Red Side)
+    // We check picking for "Game 1" mainly for the reveal context, or general series context?
+    // DraftReveal usually shows Game 1 matchup.
+    // If Game 1 Pick is owned by A -> A is Red.
+    let blueSidePlayer = player_a;
+    let redSidePlayer = player_b;
+    const game1Pick = picks ? picks["Game 1"] : null;
+
+    if (game1Pick) {
+        const isOwnedByA = announced_champions["A"].some(c => c.name === game1Pick.champion);
+        const isOwnedByB = announced_champions["B"].some(c => c.name === game1Pick.champion);
+
+        if (isOwnedByA) {
+            // A announced it -> A is Red Side
+            redSidePlayer = player_a;
+            blueSidePlayer = player_b;
+        } else if (isOwnedByB) {
+            // B announced it -> B is Red Side
+            redSidePlayer = player_b;
+            blueSidePlayer = player_a;
+        }
+    }
+
     return (
         <div className="p-8 animate-fade-in flex flex-col items-center gap-8 pb-20">
-            {showReveal && picks && picks["Game 1"] && picks["Game 2"] && (
+            {showReveal && picks && picks["Game 1"] && (
                 <DraftReveal
-                    playerA={player_a}
-                    playerB={player_b}
-                    champA={picks["Game 1"]} // Using Game 1 as the face of the series reveal
-                    champB={picks["Game 1"]} // Both play the same champ in X1 Knockout? Needs Verification.
-                    // Wait, Knockout rules say: "Each player plays the SAME champion in a Mirror Match"? 
-                    // Regras padrao X1 is usually Mirror Match.
-                    // Checking code: `handleSeriesPick` sends `champion: champ.name` for `player: "Both"`.
-                    // YES. It is a mirror match.
-                    // So champA and champB are effectively the same champion object/image.
+                    playerA={blueSidePlayer}
+                    playerB={redSidePlayer}
+                    champA={picks["Game 1"]}
+                    champB={picks["Game 1"]}
                     onDismiss={() => setShowReveal(false)}
                 />
             )}
