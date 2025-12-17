@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
 import ChampionCard from './ChampionCard';
+import DraftReveal from './DraftReveal';
 import { playLockSound, playBanSound, playChampionVoice } from '../sounds';
 
 const KnockoutPhase = ({ state, onStateUpdate }) => {
@@ -20,6 +21,7 @@ const KnockoutPhase = ({ state, onStateUpdate }) => {
     const [selectedChamp, setSelectedChamp] = useState(null);
     const [banTurn, setBanTurn] = useState("A"); // Local state for ban turn sequence
     const [loading, setLoading] = useState(false);
+    const [showReveal, setShowReveal] = useState(false);
 
     useEffect(() => {
         api.get('/champions-all').then(res => {
@@ -38,6 +40,20 @@ const KnockoutPhase = ({ state, onStateUpdate }) => {
     const isAnnouncementPhase = currentAnnouncements < targetAnnouncements;
     const isBanPhase = !isAnnouncementPhase && knockout_bans.length < 2;
     const isSeriesPhase = !isAnnouncementPhase && !isBanPhase;
+
+    const gamesNeeded = series_format === "MD3" ? 2 : 3; // Minimum games
+    const maxGames = series_format === "MD3" ? 3 : 5;
+    const gamesList = Array.from({ length: maxGames }, (_, i) => `Game ${i + 1}`);
+
+    // Check if draft is fully complete (all games have picks)
+    // Note: Decider games might be effectively "picked" if they have data, even if random.
+    const isDraftComplete = isSeriesPhase && gamesList.every(g => picks && picks[g]);
+
+    useEffect(() => {
+        if (isDraftComplete && !showReveal) {
+            setShowReveal(true);
+        }
+    }, [isDraftComplete]);
 
     // --- Announcement Logic ---
     const handleAnnounce = async () => {
@@ -179,13 +195,7 @@ const KnockoutPhase = ({ state, onStateUpdate }) => {
         const allAnnounced = [...announced_champions["A"], ...announced_champions["B"]];
         const remaining = allAnnounced.filter(c => !knockout_bans.includes(c.name));
 
-        // Determine ban turn: A bans first, then B? Or user manual?
-        // Logic: Setup doesn't define ban turn. Let's assume Announce First logic or alternating.
-        // Or simpler: Just allow either to click. The UI shows "Banimento 1/2".
         const banCount = knockout_bans.length;
-        // Since we don't have explicit ban turn state in backend, we simulate or assume manual control is okay.
-        // Or use `announce_turn_player`? But backend switches it after announce.
-        // We can just display "Banimento {banCount + 1}"
 
         return (
             <div className="p-8 animate-fade-in flex flex-col items-center gap-8">
@@ -212,15 +222,12 @@ const KnockoutPhase = ({ state, onStateUpdate }) => {
     const allAnnounced = [...announced_champions["A"], ...announced_champions["B"]];
     const availablePool = allAnnounced.filter(c => !knockout_bans.includes(c.name));
 
-    const gamesNeeded = series_format === "MD3" ? 2 : 3; // Minimum games
-    const maxGames = series_format === "MD3" ? 3 : 5;
-    const gamesList = Array.from({ length: maxGames }, (_, i) => `Game ${i + 1}`);
-
     const handleSeriesPick = async (game, champ) => {
         // Determine who is picking based on game number? 
         // Logic: Announce First player picks for Game 1, 3, 5? Or Game 1, 2?
         // "Os jogadores alternam a escolha".
         // Let's assume AnnounceFirst picks for Game 1.
+        playChampionVoice(champ.name);
         const announceFirstPlayer = announce_turn_player === "A" ? player_a : player_b; // Wait, announce_turn_player toggles.
         // We used "announce_turn_player" in init setup.
         // But logic toggles it. So we rely on "setup" logic.
@@ -242,6 +249,21 @@ const KnockoutPhase = ({ state, onStateUpdate }) => {
 
     return (
         <div className="p-8 animate-fade-in flex flex-col items-center gap-8 pb-20">
+            {showReveal && picks && picks["Game 1"] && picks["Game 2"] && (
+                <DraftReveal
+                    playerA={player_a}
+                    playerB={player_b}
+                    champA={picks["Game 1"]} // Using Game 1 as the face of the series reveal
+                    champB={picks["Game 1"]} // Both play the same champ in X1 Knockout? Needs Verification.
+                    // Wait, Knockout rules say: "Each player plays the SAME champion in a Mirror Match"? 
+                    // Regras padrao X1 is usually Mirror Match.
+                    // Checking code: `handleSeriesPick` sends `champion: champ.name` for `player: "Both"`.
+                    // YES. It is a mirror match.
+                    // So champA and champB are effectively the same champion object/image.
+                    onDismiss={() => setShowReveal(false)}
+                />
+            )}
+
             <h2 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-red-500">
                 ⚔️ Duelo {series_format}
             </h2>

@@ -1,35 +1,163 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Beaufort+LoL:wght@500;700&display=swap');
+/* Hypothetical LoL font or similar display font */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  /* Hextech Palette */
+  --hex-gold-100: #f0e6d2;
+  --hex-gold-300: #c8aa6e;
+  --hex-gold-500: #c89b3c;
+  --hex-gold-700: #785a28;
+
+  --hex-blue-300: #0ac8b9;
+  --hex-blue-500: #0397ab;
+  --hex-blue-900: #01262d;
+
+  --hex-dark-100: #1e2328;
+  --hex-dark-300: #0f1219;
+  /* Primary Background */
+  --hex-dark-500: #090a11;
+
+  --hex-magic: #cd3c77;
+  /* For subtle magical accents */
+}
+
 body {
   font-family: 'Outfit', sans-serif;
-  background: linear-gradient(135deg, #0f1219 0%, #1a1e29 100%);
-  color: #e0e0e0;
+  background-color: var(--hex-dark-300);
+  background-image:
+    radial-gradient(circle at 15% 50%, rgba(3, 151, 171, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 85% 30%, rgba(200, 155, 60, 0.05) 0%, transparent 50%),
+    linear-gradient(180deg, rgba(15, 18, 25, 0.95) 0%, rgba(15, 18, 25, 1) 100%),
+    url('https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/bg-clouds-loop.jpg');
+  /* Subtle texture */
+  background-size: cover, cover, cover, cover;
+  background-position: center;
+  background-attachment: fixed;
+  color: #f0f0f0;
   margin: 0;
   min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--hex-dark-500);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--hex-gold-700);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--hex-gold-500);
 }
 
 @layer utilities {
+  .font-display {
+    font-family: 'Beaufort LoL', 'Outfit', sans-serif;
+    /* Fallback to Outfit if custom font not loaded */
+  }
+
+  .text-hex-gold {
+    color: var(--hex-gold-300);
+  }
+
+  .text-hex-gold-light {
+    color: var(--hex-gold-100);
+  }
+
+  .text-hex-blue {
+    color: var(--hex-blue-300);
+  }
+
+  .text-hex-magic {
+    color: var(--hex-magic);
+  }
+
+  .bg-hex-dark {
+    background-color: var(--hex-dark-300);
+  }
+
+  .bg-hex-panel {
+    background-color: rgba(30, 35, 40, 0.95);
+  }
+
+  .border-hex-gold {
+    border-color: var(--hex-gold-500);
+  }
+
+  .border-hex-blue {
+    border-color: var(--hex-blue-500);
+  }
+
+  /* Glassmorphism Panels */
+  .hex-panel {
+    @apply relative border border-[color:var(--hex-gold-700)] bg-[color:var(--hex-dark-100)] shadow-2xl;
+    /* Fancy border effect */
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(0, 0, 0, 0.5);
+  }
+
+  .hex-panel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border: 1px solid rgba(200, 170, 110, 0.1);
+    background: linear-gradient(120deg, transparent 40%, rgba(200, 170, 110, 0.05) 50%, transparent 60%);
+    background-size: 200% 100%;
+    animation: shine 8s infinite linear;
+    z-index: 1;
+  }
+
+  .glass-panel {
+    @apply backdrop-blur-md bg-white/5 border border-white/10 shadow-xl;
+  }
+
+  .hex-button {
+    @apply uppercase tracking-widest font-bold px-6 py-3 transition-all duration-300 relative overflow-hidden;
+    background: linear-gradient(to bottom, #1e2328, #13171f);
+    color: var(--hex-gold-100);
+    border: 1px solid var(--hex-gold-500);
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.8);
+  }
+
+  .hex-button:hover {
+    background: linear-gradient(to bottom, #2a3038, #1c2129);
+    color: #fff;
+    text-shadow: 0 0 8px var(--hex-gold-300);
+    border-color: var(--hex-gold-300);
+    box-shadow: 0 0 15px rgba(200, 155, 60, 0.3), inset 0 0 5px rgba(200, 155, 60, 0.2);
+  }
+
+  .hex-button:active {
+    transform: translateY(1px);
+  }
+
+  /* Animations */
   .animate-fade-in {
     animation: fadeIn 0.5s ease-out forwards;
   }
 
   .animate-slide-up {
-    animation: slideUp 0.6s ease-out forwards;
+    animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 
   .animate-scale-in {
-    animation: scaleIn 0.4s ease-out forwards;
+    animation: scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
   }
 
-  .animate-pulse-soft {
-    animation: pulseSoft 2s infinite;
-  }
-
-  .glass-panel {
-    @apply bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl shadow-xl;
+  .animate-hex-pulse {
+    animation: hexPulse 2s infinite;
   }
 }
 
@@ -46,7 +174,7 @@ body {
 @keyframes slideUp {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(30px);
   }
 
   to {
@@ -58,7 +186,7 @@ body {
 @keyframes scaleIn {
   from {
     opacity: 0;
-    transform: scale(0.95);
+    transform: scale(0.9);
   }
 
   to {
@@ -67,19 +195,32 @@ body {
   }
 }
 
-@keyframes pulseSoft {
+@keyframes hexPulse {
   0% {
-    transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(147, 51, 234, 0.4);
+    box-shadow: 0 0 0 0 rgba(200, 155, 60, 0.4);
   }
 
   70% {
-    transform: scale(1.02);
-    box-shadow: 0 0 0 10px rgba(147, 51, 234, 0);
+    box-shadow: 0 0 0 10px rgba(200, 155, 60, 0);
   }
 
   100% {
-    transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(147, 51, 234, 0);
+    box-shadow: 0 0 0 0 rgba(200, 155, 60, 0);
   }
+}
+
+@keyframes shine {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Utility Override for Selection */
+::selection {
+  background: var(--hex-gold-700);
+  color: #fff;
 }
