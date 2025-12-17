@@ -3,11 +3,11 @@
 
 // Assets from CommunityDragon (LoL Assets)
 const SOUND_ASSETS = {
-    LOCK: "https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-champ-select/global/default/sounds/sfx-cs-lockin-button-click.ogg",
-    HOVER: "https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-champ-select/global/default/sounds/sfx-cs-button-hover.ogg",
-    CLICK: "https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-champ-select/global/default/sounds/sfx-cs-button-click.ogg",
-    BAN: "https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-champ-select/global/default/sounds/sfx-cs-ban-button-click.ogg",
-    DRAFT_COMPLETE: "https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-champ-select/global/default/sounds/sfx-cs-phases-ready-finalization.ogg" // Dramatic sound
+    LOCK: "https://raw.communitydragon.org/13.24/plugins/rcp-fe-lol-champ-select/global/default/sounds/sfx-cs-lockin-button-click.ogg",
+    HOVER: "https://raw.communitydragon.org/13.24/plugins/rcp-fe-lol-champ-select/global/default/sounds/sfx-cs-button-hover.ogg",
+    CLICK: "https://raw.communitydragon.org/13.24/plugins/rcp-fe-lol-champ-select/global/default/sounds/sfx-cs-button-click.ogg",
+    BAN: "https://raw.communitydragon.org/13.24/plugins/rcp-fe-lol-champ-select/global/default/sounds/sfx-cs-ban-button-click.ogg",
+    DRAFT_COMPLETE: "https://raw.communitydragon.org/13.24/plugins/rcp-fe-lol-champ-select/global/default/sounds/sfx-cs-phases-ready-finalization.ogg"
 };
 
 let audioContext = null;

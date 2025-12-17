@@ -334,8 +334,39 @@ const KnockoutPhase = ({ state, onStateUpdate }) => {
                                 {pickData ? (
                                     <>
                                         <img src={pickData.image} className="w-32 h-32 rounded-full shadow-lg border-4 border-primary" />
-                                        <div className="text-2xl font-bold">{pickData.champion}</div>
-                                        <div className="text-xs bg-black/40 px-3 py-1 rounded-full uppercase text-primary font-bold">Definido</div>
+                                        <div className="text-2xl font-bold mb-2">{pickData.champion}</div>
+
+                                        {(() => {
+                                            // Side Logic: Announcer = Red Side
+                                            let redPlayer = player_b; // Default
+                                            let bluePlayer = player_a;
+
+                                            // Check who announced it
+                                            const isOwnedByA = announced_champions["A"].some(c => c.name === pickData.champion);
+                                            const isOwnedByB = announced_champions["B"].some(c => c.name === pickData.champion);
+
+                                            if (isOwnedByA) {
+                                                redPlayer = player_a;
+                                                bluePlayer = player_b;
+                                            } else if (isOwnedByB) {
+                                                redPlayer = player_b;
+                                                bluePlayer = player_a;
+                                            }
+
+                                            return (
+                                                <div className="flex flex-col gap-1 w-full px-4">
+                                                    <div className="flex justify-between items-center bg-blue-900/40 px-3 py-1 rounded text-xs border border-blue-500/30">
+                                                        <span className="text-blue-300 font-bold">🟦 BLUE</span>
+                                                        <span className="text-white">{bluePlayer}</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center bg-red-900/40 px-3 py-1 rounded text-xs border border-red-500/30">
+                                                        <span className="text-red-300 font-bold">🟥 RED</span>
+                                                        <span className="text-white">{redPlayer}</span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })()}
+
                                     </>
                                 ) : (
                                     <div className="w-32 h-32 rounded-full bg-black/20 flex items-center justify-center text-4xl grayscale opacity-30">

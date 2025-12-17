@@ -281,77 +281,66 @@ const ChoicePhase = ({ state, onStateUpdate }) => {
     ];
 
     return (
-        <>
-            {showReveal && picks && (
-                <DraftReveal
-                    playerA="JOGO 1 (IDA)"
-                    playerB="JOGO 2 (VOLTA)"
-                    champA={picks["Game 1"]}
-                    champB={picks["Game 2"]}
-                    onDismiss={() => setShowReveal(false)}
-                />
-            )}
+        <div className={`p-8 flex flex-col items-center gap-8 pb-20 transition-all duration-1000 ease-out ${showReveal ? 'animate-zoom-out-reveal opacity-100 scale-100' : 'opacity-0 scale-150'}`}>
+            <div className="flex justify-between items-center w-full max-w-3xl">
+                <h2 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-hex-gold-100 to-hex-gold-500 font-display uppercase tracking-widest drop-shadow-sm">🎮 Duelo Configurado</h2>
+                <button
+                    onClick={async () => {
+                        if (!confirm("Finalizar duelo e salvar no histórico?")) return;
+                        await api.post('/reset-duel');
+                        window.location.reload();
+                    }}
+                    className="bg-red-500/10 text-red-400 px-6 py-2 rounded-xl hover:bg-red-500/30 border border-red-500/50 font-bold transition-all uppercase tracking-widest text-xs hover:shadow-[0_0_15px_rgba(239,68,68,0.4)]"
+                >
+                    Finalizar Duelo
+                </button>
+            </div>
 
-            <div className="p-8 animate-fade-in flex flex-col items-center gap-8 pb-20">
-                <div className="flex justify-between items-center w-full max-w-3xl">
-                    <h2 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-hex-gold-100 to-hex-gold-500 font-display uppercase tracking-widest drop-shadow-sm">🎮 Duelo Configurado</h2>
-                    <button
-                        onClick={async () => {
-                            if (!confirm("Finalizar duelo e salvar no histórico?")) return;
-                            await api.post('/reset-duel');
-                            window.location.reload();
-                        }}
-                        className="bg-red-500/10 text-red-400 px-6 py-2 rounded-xl hover:bg-red-500/30 border border-red-500/50 font-bold transition-all uppercase tracking-widest text-xs hover:shadow-[0_0_15px_rgba(239,68,68,0.4)]"
-                    >
-                        Finalizar Duelo
-                    </button>
-                </div>
+            <div className="w-full max-w-3xl flex flex-col gap-8">
+                {games.map((g, idx) => {
+                    const bluePlayer = g.pA_side === "Blue" ? player_a : player_b;
+                    const redPlayer = g.pA_side === "Red" ? player_a : player_b;
 
-                <div className="w-full max-w-3xl flex flex-col gap-8">
-                    {games.map((g, idx) => {
-                        const bluePlayer = g.pA_side === "Blue" ? player_a : player_b;
-                        const redPlayer = g.pA_side === "Red" ? player_a : player_b;
+                    return (
+                        <div key={idx} className="bg-hex-dark-500/[0.8] border border-hex-gold-500/20 rounded-2xl p-6 relative overflow-hidden">
+                            <h3 className="text-center font-bold text-hex-gold-300 text-lg uppercase tracking-widest mb-6 border-b border-white/5 pb-2">{g.name}</h3>
 
-                        return (
-                            <div key={idx} className="bg-hex-dark-500/[0.8] border border-hex-gold-500/20 rounded-2xl p-6 relative overflow-hidden">
-                                <h3 className="text-center font-bold text-hex-gold-300 text-lg uppercase tracking-widest mb-6 border-b border-white/5 pb-2">{g.name}</h3>
-
-                                <div className="flex items-center justify-between px-4">
-                                    {/* Blue Side */}
-                                    <div className="flex flex-col items-center gap-2 w-1/3">
-                                        <span className="text-blue-400 font-bold uppercase tracking-wider text-xs">Blue Side</span>
-                                        <div className="relative group">
-                                            <img src={g.pick.image} className="w-20 h-20 rounded-full border-4 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
-                                            <div className="absolute -bottom-2 inset-x-0 bg-blue-900 border border-blue-500 text-xs text-center rounded text-blue-100 font-bold py-0.5 transform scale-90">
-                                                {g.pick.champion}
-                                            </div>
+                            <div className="flex items-center justify-between px-4">
+                                {/* Blue Side */}
+                                <div className="flex flex-col items-center gap-2 w-1/3">
+                                    <span className="text-blue-400 font-bold uppercase tracking-wider text-xs">Blue Side</span>
+                                    <div className="relative group">
+                                        <img src={g.pick.image} className="w-20 h-20 rounded-full border-4 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
+                                        <div className="absolute -bottom-2 inset-x-0 bg-blue-900 border border-blue-500 text-xs text-center rounded text-blue-100 font-bold py-0.5 transform scale-90">
+                                            {g.pick.champion}
                                         </div>
-                                        <span className="font-bold text-white text-lg mt-2">{bluePlayer}</span>
                                     </div>
+                                    <span className="font-bold text-white text-lg mt-2">{bluePlayer}</span>
+                                </div>
 
-                                    {/* VS */}
-                                    <div className="flex flex-col items-center justify-center w-1/3">
-                                        <div className="text-4xl font-display italic text-hex-gold-500 opacity-80">VS</div>
-                                    </div>
+                                {/* VS */}
+                                <div className="flex flex-col items-center justify-center w-1/3">
+                                    <div className="text-4xl font-display italic text-hex-gold-500 opacity-80">VS</div>
+                                </div>
 
-                                    {/* Red Side */}
-                                    <div className="flex flex-col items-center gap-2 w-1/3">
-                                        <span className="text-red-400 font-bold uppercase tracking-wider text-xs">Red Side</span>
-                                        <div className="relative group">
-                                            <img src={g.pick.image} className="w-20 h-20 rounded-full border-4 border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.5)]" />
-                                            <div className="absolute -bottom-2 inset-x-0 bg-red-900 border border-red-500 text-xs text-center rounded text-red-100 font-bold py-0.5 transform scale-90">
-                                                {g.pick.champion}
-                                            </div>
+                                {/* Red Side */}
+                                <div className="flex flex-col items-center gap-2 w-1/3">
+                                    <span className="text-red-400 font-bold uppercase tracking-wider text-xs">Red Side</span>
+                                    <div className="relative group">
+                                        <img src={g.pick.image} className="w-20 h-20 rounded-full border-4 border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.5)]" />
+                                        <div className="absolute -bottom-2 inset-x-0 bg-red-900 border border-red-500 text-xs text-center rounded text-red-100 font-bold py-0.5 transform scale-90">
+                                            {g.pick.champion}
                                         </div>
-                                        <span className="font-bold text-white text-lg mt-2">{redPlayer}</span>
                                     </div>
+                                    <span className="font-bold text-white text-lg mt-2">{redPlayer}</span>
                                 </div>
                             </div>
-                        );
-                    })}
-                </div>
+                        </div>
+                    );
+                })}
             </div>
-        </>
+        </div>
+
     );
 };
 
