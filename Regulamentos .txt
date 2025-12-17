@@ -1,0 +1,80 @@
+Regulamento
+
+INFORMAÇÕES GERAIS
+• Modalidade: X1 (um contra um)
+• Elo considerado: Solo/Duo (registrado no início do torneio)
+
+1. REGRA PRINCIPAL DE CAMPEÕES
+Em todos os duelos da competição, ambos os jogadores utilizarão sempre o MESMO campeão em
+cada partida. Não existem partidas com campeões diferentes entre os jogadores dentro da mesma
+partida.
+
+2. FORMATO DO TORNEIO
+O torneio será dividido em duas fases: 
+• Fase de Grupos (Pontos Corridos) — todos contra todos em MD2 (ida e volta) 
+• Fase Final (Mata-mata com repescagem) — MD3 nas chaves iniciais e MD5 na
+final, conforme descrito abaixo
+
+3. FASE DE GRUPOS (PONTOS CORRIDOS)
+• Todos os jogadores se enfrentam em uma melhor de 2 (MD2): uma partida no lado Azul e outra no
+lado Vermelho.
+• Os 6 melhores colocados avançam para o mata-mata.
+
+4. ESCOLHA DE ROTA — FASE DE GRUPOS
+• Os jogadores alternam o banimento das rotas: Top, JG (Selva), Mid, ADC, Suporte.
+• O jogador de maior Elo (registrado no início do torneio) inicia os bans.
+• A última rota restante será a rota do duelo (onde ambos jogarão).
+
+5. SORTEIO DE CAMPEÕES — FASE DE GRUPOS
+• São sorteados 4 campeões da rota escolhida.
+• Os campeões sorteados NÃO podem ter sido utilizados anteriormente por NENHUM jogador do
+torneio na fase de grupos.
+• Caso os campeões disponíveis na rota se esgotem, liberam-se campeões ainda não utilizados por
+ambos os jogadores do duelo (priorizando campeões não usados por nenhum dos dois).
+
+6. ESCOLHA DE CAMPEÕES NA MATCH (MD2) — FASE DE GRUPOS
+• O jogador de menor Elo, ao ver os 4 campeões sorteados, escolhe entre:
+(A) Definir a ordem de pick (quem escolhe primeiro e quem escolhe depois) — OU —
+(B) Escolher o lado do mapa (Azul ou Vermelho) para a primeira partida.
+• O jogador que ficou encarregado de definir a ordem de pick decide se quer pickar primeiro ou
+segundo.
+• O jogador que picka primeiro escolhe 1 campeão; o adversário escolhe 1 campeão entre os 4
+sorteados.
+• Os 2 campeões restantes são descartados.
+Uso dos campeões:
+• O 1º campeão escolhido será utilizado por AMBOS os jogadores na primeira partida da MD2 (ida).
+• O 2º campeão escolhido será utilizado por AMBOS os jogadores na segunda partida da MD2
+(volta).
+
+7. FASE MATA-MATA
+• Formato: MD3 nas chaves iniciais; a final será MD5.
+• Campeões usados na fase de grupos não são levados em consideração: todos os campeões voltam a ficar disponíveis para a fase mata-mata, observadas as regras abaixo.
+
+8. ANÚNCIO DE CAMPEÕES — MATA-MATA
+• MD3: cada jogador anuncia 2 campeões, alternadamente.
+• MD5: cada jogador anuncia 3 campeões, alternadamente.
+• A ordem de início do anúncio começa pelo jogador com pior campanha na fase de grupos (pior
+colocação).
+• Um jogador NÃO pode anunciar campeões que ele próprio já UTILIZOU anteriormente no mata-mata.
+• Campeões usados na fase de grupos podem ser anunciados, desde que o jogador que anuncia
+não tenha usado o campeão já na fase mata-mata.
+
+9. BANIMENTOS — MATA-MATA
+• Cada jogador bane 1 campeão anunciado pelo adversário.
+• Os campeões restantes (após os bans) ficam disponíveis para seleção na série.
+
+10. ESCOLHA DE CAMPEÃO POR PARTIDA — MATA-MATA
+• Os jogadores alternam a escolha de qual campeão será jogado em cada partida da série
+(MD3/MD5).
+• O campeão escolhido será utilizado por AMBOS os jogadores naquela partida.
+• O jogador que não escolheu o campeão para a partida escolhe o lado do mapa (Azul/Vermelho)
+para essa partida
+
+11. ÚLTIMA PARTIDA DA SÉRIE
+• Caso seja necessária a partida decisiva (ex.: jogo 3 na MD3 ou jogo 5 na MD5), o campeão será
+sorteado aleatoriamente entre os campeões não utilizados ainda na fase de mata-mata.
+
+12. DISPOSIÇÕES FINAIS
+• Qualquer situação não prevista neste regulamento deverá ser resolvida em comum acordo entre os
+jogadores ou por decisão do organizador do torneio.
+• O objetivo principal do torneio é promover competição justa e diversão entre os participantes.

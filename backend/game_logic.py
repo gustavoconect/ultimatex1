@@ -110,9 +110,7 @@ class GameManager:
         
         # Set announce start (for Knockout)
         if phase == "Knockout":
-            self.state["global_blacklist"] = []
-            save_blacklist([])
-            
+            # No longer wiping global blacklist here to preserve Groups data
             if announce_first:
                 self.state["announce_turn_player"] = "A" if announce_first == p1 else "B"
         
@@ -239,9 +237,9 @@ class GameManager:
             })
             save_blacklist(self.state["global_blacklist"])
         
-        # Update Personal History
-        # Update Personal History
-        update_player_history_db(player_name, champion)
+        # Update Personal History for BOTH players (since both play the champion)
+        update_player_history_db(self.state["player_a"], champion)
+        update_player_history_db(self.state["player_b"], champion)
 
     # ========== KNOCKOUT PHASE METHODS ==========
 
