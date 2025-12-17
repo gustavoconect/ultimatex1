@@ -22,15 +22,16 @@ const LaneBanPhase = ({ bannedLanes, onBan, currentPlayer, currentPlayerName }) 
             </h2>
 
             <div className="grid grid-cols-5 gap-4">
-                {LANES.map(lane => {
+                {LANES.map((lane, idx) => {
                     const isBanned = bannedLanes.includes(lane);
                     return (
                         <button
                             key={lane}
                             disabled={isBanned}
                             onClick={() => onBan(lane)}
+                            style={{ animationDelay: `${idx * 100}ms` }}
                             className={`
-                h-40 rounded-xl border-2 flex flex-col items-center justify-center gap-4 transition-all duration-300
+                h-40 rounded-xl border-2 flex flex-col items-center justify-center gap-4 transition-all duration-300 animate-slide-up
                 ${isBanned
                                     ? 'border-gray-800 bg-gray-900/50 text-gray-600 cursor-not-allowed scale-95 grayscale'
                                     : 'border-white/10 bg-cardBg hover:border-red-500 hover:bg-red-500/10 hover:shadow-[0_0_30px_rgba(244,67,54,0.3)] hover:-translate-y-2'

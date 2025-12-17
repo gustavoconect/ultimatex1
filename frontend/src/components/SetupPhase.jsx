@@ -180,7 +180,7 @@ const SetupPhase = ({ onStart }) => {
                 <div className="mt-10">
                     <button
                         type="submit"
-                        className="w-full bg-gradient-to-r from-primary to-yellow-600 hover:to-yellow-500 text-black font-bold py-4 rounded-xl text-xl uppercase tracking-widest transition-all hover:scale-[1.01] hover:shadow-[0_0_25px_rgba(212,175,55,0.4)] flex items-center justify-center gap-3"
+                        className="w-full bg-gradient-to-r from-primary to-yellow-600 hover:to-yellow-500 text-black font-bold py-4 rounded-xl text-xl uppercase tracking-widest transition-all hover:scale-[1.01] hover:shadow-[0_0_25px_rgba(212,175,55,0.4)] flex items-center justify-center gap-3 animate-pulse-soft"
                     >
                         <Sword className="w-6 h-6" />
                         Iniciar {tournamentPhase === "Groups" ? "Fase de Grupos" : "Mata-Mata"}

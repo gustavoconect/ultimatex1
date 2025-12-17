@@ -109,11 +109,11 @@ function App() {
                 )}
 
                 {showChoicePhase && !state.drawn_champions?.length && (
-                    <div className="flex flex-col items-center justify-center h-[60vh] gap-8 animate-fade-in">
+                    <div className="flex flex-col items-center justify-center h-[60vh] gap-8 animate-scale-in">
                         <h2 className="text-4xl font-bold">Rota Definida: <span className="text-primary">{state.selected_lane}</span></h2>
                         <button
                             onClick={handleDraw}
-                            className="bg-primary text-black px-12 py-6 rounded-2xl text-2xl font-bold uppercase hover:scale-105 transition-transform flex items-center gap-4 shadow-[0_0_50px_rgba(212,175,55,0.3)]"
+                            className="bg-primary text-black px-12 py-6 rounded-2xl text-2xl font-bold uppercase hover:scale-105 transition-transform flex items-center gap-4 shadow-[0_0_50px_rgba(212,175,55,0.3)] animate-pulse-soft"
                         >
                             🎲 Sortear Campeões
                         </button>
