@@ -32,9 +32,12 @@ export async function GET(request: NextRequest) {
 
         if (!error) {
             return response;
+        } else {
+            console.error("Auth Callback Error:", error);
+            return NextResponse.redirect(`${origin}/auth/auth-code-error?error=${encodeURIComponent(error.message)}`);
         }
     }
 
     // Error case
-    return NextResponse.redirect(`${origin}/auth/auth-code-error`);
+    return NextResponse.redirect(`${origin}/auth/auth-code-error?error=NoCodeProvided`);
 }
